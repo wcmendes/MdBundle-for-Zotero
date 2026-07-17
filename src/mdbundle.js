@@ -37,7 +37,7 @@ MdBundle = {
 	async loadStrings() {
 		// Detect locale and load appropriate strings
 		let locale = Zotero.locale || 'en-US';
-		let supported = ['en-US', 'pt-BR', 'es-ES', 'zh-CN', 'it-IT', 'fr-FR', 'de-DE', 'ja-JP'];
+		let supported = ['en-US', 'pt-BR', 'es-ES', 'zh-CN', 'it-IT', 'fr-FR', 'de-DE', 'ja-JP', 'ko-KR', 'ru-RU', 'pl-PL', 'tr-TR'];
 		if (!supported.includes(locale)) {
 			if (locale.startsWith('pt')) locale = 'pt-BR';
 			else if (locale.startsWith('es')) locale = 'es-ES';
@@ -46,6 +46,10 @@ MdBundle = {
 			else if (locale.startsWith('fr')) locale = 'fr-FR';
 			else if (locale.startsWith('de')) locale = 'de-DE';
 			else if (locale.startsWith('ja')) locale = 'ja-JP';
+			else if (locale.startsWith('ko')) locale = 'ko-KR';
+			else if (locale.startsWith('ru')) locale = 'ru-RU';
+			else if (locale.startsWith('pl')) locale = 'pl-PL';
+			else if (locale.startsWith('tr')) locale = 'tr-TR';
 			else locale = 'en-US';
 		}
 
