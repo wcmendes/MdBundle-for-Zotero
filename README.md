@@ -133,7 +133,6 @@ zip -r ../mdbundle.xpi .
 | Project | Description |
 |---------|-------------|
 | [pdftollm](https://github.com/wcmendes/pdftollm) | High-quality PDF→MD conversion with OCR support for LLM pipelines |
-| [VLibras Video Generator](https://github.com/wcmendes/vlibras-video-generator) | Generate Brazilian Sign Language (Libras) videos from SRT subtitles |
 
 ## Compatibility
 
