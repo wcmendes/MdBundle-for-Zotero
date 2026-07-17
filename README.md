@@ -202,11 +202,8 @@ If MdBundle is useful for your research, consider supporting its development:
 - 🐛 [Report bugs or suggest features](https://github.com/wcmendes/MdBundle-for-Zotero/issues)
 - 🌍 [Contribute translations](CONTRIBUTING.md)
 - 🔀 [Submit a Pull Request](CONTRIBUTING.md)
-
-<!--
-- ☕ [Buy me a coffee](https://buymeacoffee.com/YOUR_USERNAME)
 - 💜 [GitHub Sponsors](https://github.com/sponsors/wcmendes)
--->
+- 🇧🇷 PIX: `2ddcbe7b-e3f3-4502-ae29-c735beee9ed6`
 
 ## License
 
