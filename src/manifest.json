@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "MdBundle for Zotero",
+  "version": "1.0.0",
+  "description": "Bundle, analyze & export your PDF/MD attachments. Generate MDs from PDFs and select cited items from Word documents.",
+  "author": "William Mendes",
+  "homepage_url": "https://github.com/wcmendes/MdBundle-for-Zotero",
+  "icons": {
+    "48": "content/icons/icon48.png",
+    "96": "content/icons/icon96.png"
+  },
+  "applications": {
+    "zotero": {
+      "id": "mdbundle@williammendes.dev",
+      "update_url": "https://raw.githubusercontent.com/wcmendes/MdBundle-for-Zotero/main/updates.json",
+      "strict_min_version": "6.999",
+      "strict_max_version": "9.*"
+    }
+  }
+}
