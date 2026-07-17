@@ -430,9 +430,24 @@ MdBundle = {
 
 			await window.ZoteroPane.selectItems(found.map(i => i.id));
 
+			// Analyze attachment status of found items
+			let withPdf = 0, withMd = 0, noFiles = 0;
+			for (let item of found) {
+				let { pdfFiles, mdFiles } = await this.getAttachmentInfo(item);
+				let hasPdf = pdfFiles.length > 0;
+				let hasMd = this.hasMatchingMd(pdfFiles, mdFiles);
+				if (hasPdf) withPdf++;
+				if (hasMd) withMd++;
+				if (!hasPdf && mdFiles.length === 0) noFiles++;
+			}
+
 			let msg = `${this.s('mdbundle-docx-success')}\n\n`;
 			msg += `${this.s('mdbundle-docx-citations')}: ${citations.length}\n`;
 			msg += `${this.s('mdbundle-docx-found')}: ${found.length}\n`;
+			msg += `\n📊 ${this.s('mdbundle-docx-found')}:\n`;
+			msg += `  ✅ ${this.s('mdbundle-with-pdf')}: ${withPdf}\n`;
+			msg += `  ✅ ${this.s('mdbundle-with-md')}: ${withMd}\n`;
+			if (noFiles > 0) msg += `  ❌ ${this.s('mdbundle-no-pdf-no-md')}: ${noFiles}\n`;
 			if (notFound.length > 0) {
 				msg += `\n⚠️ ${this.s('mdbundle-docx-not-found')} (${notFound.length}):\n`;
 				for (let c of notFound.slice(0, 15)) msg += `  • ${c.label}\n`;
