@@ -109,11 +109,17 @@ Right-click → MdBundle → Export All
 ## Localization
 
 MdBundle supports multiple languages:
-- 🇺🇸 English (en-US)
-- 🇧🇷 Português (pt-BR)
-- 🇪🇸 Español (es-ES)
 
-Zotero automatically selects the language based on your settings.
+| Language | Locale | Language | Locale |
+|----------|--------|----------|--------|
+| 🇺🇸 English | en-US | 🇯🇵 日本語 | ja-JP |
+| 🇧🇷 Português | pt-BR | 🇰🇷 한국어 | ko-KR |
+| 🇪🇸 Español | es-ES | 🇷🇺 Русский | ru-RU |
+| 🇨🇳 中文 | zh-CN | 🇵🇱 Polski | pl-PL |
+| 🇮🇹 Italiano | it-IT | 🇹🇷 Türkçe | tr-TR |
+| 🇫🇷 Français | fr-FR | 🇩🇪 Deutsch | de-DE |
+
+Zotero automatically selects the language based on your settings. Unsupported locales fall back to English.
 
 ## About OCR
 
