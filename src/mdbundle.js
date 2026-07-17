@@ -431,14 +431,16 @@ MdBundle = {
 			await window.ZoteroPane.selectItems(found.map(i => i.id));
 
 			// Analyze attachment status of found items
-			let withPdf = 0, withMd = 0, noFiles = 0;
+			let withPdf = 0, withMd = 0, noFilesList = [];
 			for (let item of found) {
 				let { pdfFiles, mdFiles } = await this.getAttachmentInfo(item);
 				let hasPdf = pdfFiles.length > 0;
 				let hasMd = this.hasMatchingMd(pdfFiles, mdFiles);
 				if (hasPdf) withPdf++;
 				if (hasMd) withMd++;
-				if (!hasPdf && mdFiles.length === 0) noFiles++;
+				if (!hasPdf && mdFiles.length === 0) {
+					noFilesList.push(item.getField('title') || `(item ${item.id})`);
+				}
 			}
 
 			let msg = `${this.s('mdbundle-docx-success')}\n\n`;
@@ -447,7 +449,11 @@ MdBundle = {
 			msg += `\n📊 ${this.s('mdbundle-docx-found')}:\n`;
 			msg += `  ✅ ${this.s('mdbundle-with-pdf')}: ${withPdf}\n`;
 			msg += `  ✅ ${this.s('mdbundle-with-md')}: ${withMd}\n`;
-			if (noFiles > 0) msg += `  ❌ ${this.s('mdbundle-no-pdf-no-md')}: ${noFiles}\n`;
+			if (noFilesList.length > 0) {
+				msg += `  ❌ ${this.s('mdbundle-no-pdf-no-md')}: ${noFilesList.length}\n`;
+				for (let t of noFilesList.slice(0, 5)) msg += `     • ${t.substring(0, 50)}\n`;
+				if (noFilesList.length > 5) msg += `     ${this.s('mdbundle-and-more', {count: noFilesList.length - 5})}\n`;
+			}
 			if (notFound.length > 0) {
 				msg += `\n⚠️ ${this.s('mdbundle-docx-not-found')} (${notFound.length}):\n`;
 				for (let c of notFound.slice(0, 15)) msg += `  • ${c.label}\n`;
