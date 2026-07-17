@@ -14,6 +14,18 @@ MdBundle is a Zotero plugin that manages the relationship between your PDFs and 
 
 The key feature is **intelligent pairing**: MdBundle only considers a PDF and MD as a pair when they share the same base filename (e.g., `Smith et al 2024.pdf` ↔ `Smith et al 2024.md`).
 
+### Why Markdown matters for research
+
+Markdown versions of academic papers are essential for modern AI-assisted research workflows:
+
+- **LLM context**: Feed your papers as MD directly into ChatGPT, Claude, Gemini, or local models for summarization, Q&A, and literature review
+- **RAG pipelines**: Build Retrieval-Augmented Generation systems over your Zotero library using structured text
+- **Semantic search**: MD files are lightweight and easily indexed, enabling fast full-text search across your entire corpus
+- **Interoperability**: Works with Obsidian, Logseq, Notion, and other knowledge management tools
+- **Version control**: Plain text diffs cleanly in Git, unlike PDFs
+
+MdBundle pairs naturally with tools like [pdftollm](https://github.com/wcmendes/pdftollm) for high-quality PDF→MD conversion with OCR support, enabling a complete pipeline from Zotero to LLM-ready text.
+
 ## Features
 
 | Feature | Description |
@@ -116,6 +128,13 @@ cd src
 zip -r ../mdbundle.xpi .
 ```
 
+## Related Projects
+
+| Project | Description |
+|---------|-------------|
+| [pdftollm](https://github.com/wcmendes/pdftollm) | High-quality PDF→MD conversion with OCR support for LLM pipelines |
+| [VLibras Video Generator](https://github.com/wcmendes/vlibras-video-generator) | Generate Brazilian Sign Language (Libras) videos from SRT subtitles |
+
 ## Compatibility
 
 | Zotero Version | Status |
@@ -131,6 +150,17 @@ zip -r ../mdbundle.xpi .
 ### Sobre
 
 MdBundle é um plugin para Zotero que gerencia a relação entre seus PDFs e seus equivalentes em Markdown. Exporta pares PDF/MD, diagnostica a saúde dos anexos da sua biblioteca, gera MDs a partir de PDFs e seleciona itens citados diretamente de documentos Word.
+
+#### Por que Markdown importa para pesquisa
+
+Versões em Markdown de artigos acadêmicos são essenciais para fluxos de trabalho modernos com IA:
+
+- **Contexto para LLMs**: Alimente seus artigos como MD diretamente no ChatGPT, Claude, Gemini ou modelos locais para sumarização, Q&A e revisão de literatura
+- **Pipelines RAG**: Construa sistemas de Geração Aumentada por Recuperação sobre sua biblioteca Zotero
+- **Busca semântica**: Arquivos MD são leves e facilmente indexáveis
+- **Interoperabilidade**: Funciona com Obsidian, Logseq, Notion e outras ferramentas de gestão do conhecimento
+
+MdBundle combina naturalmente com ferramentas como [pdftollm](https://github.com/wcmendes/pdftollm) para conversão PDF→MD de alta qualidade com suporte a OCR.
 
 ### Funcionalidades
 
