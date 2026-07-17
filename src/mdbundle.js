@@ -188,8 +188,8 @@ MdBundle = {
 				// Check suspicious MDs
 				if (hasPdf) {
 					for (let pdf of pdfFiles) {
-						let pdfBase = pdf.fileName.substring(0, pdf.fileName.lastIndexOf('.')).toLowerCase();
-						let match = mdFiles.find(md => md.fileName.substring(0, md.fileName.lastIndexOf('.')).toLowerCase() === pdfBase);
+						let pdfBase = this.normalizeName(pdf.fileName.substring(0, pdf.fileName.lastIndexOf('.')));
+						let match = mdFiles.find(md => this.normalizeName(md.fileName.substring(0, md.fileName.lastIndexOf('.'))) === pdfBase);
 						if (match && match.fileSize < 5120) {
 							suspicious.push(`${match.fileName} (${(match.fileSize/1024).toFixed(1)} KB)`);
 						}
@@ -252,7 +252,7 @@ MdBundle = {
 				let exportedPdf = false, exportedMd = false;
 
 				for (let pdf of pdfFiles) {
-					let pdfBase = pdf.fileName.substring(0, pdf.fileName.lastIndexOf('.')).toLowerCase();
+					let pdfBase = this.normalizeName(pdf.fileName.substring(0, pdf.fileName.lastIndexOf('.')));
 					if (filter === 'all' || filter === 'pdf') {
 						try {
 							let dest = await this.getUniqueFilePath(PathUtils.join(destFolder, pdf.fileName));
@@ -261,7 +261,7 @@ MdBundle = {
 						} catch(e) { errorCount++; }
 					}
 					if (filter === 'all' || filter === 'md') {
-						let match = mdFiles.find(md => md.fileName.substring(0, md.fileName.lastIndexOf('.')).toLowerCase() === pdfBase);
+						let match = mdFiles.find(md => this.normalizeName(md.fileName.substring(0, md.fileName.lastIndexOf('.'))) === pdfBase);
 						if (match) {
 							try {
 								let dest = await this.getUniqueFilePath(PathUtils.join(destFolder, match.fileName));
@@ -329,8 +329,8 @@ MdBundle = {
 				if (pdfFiles.length === 0) continue;
 
 				let pdf = pdfFiles[0];
-				let pdfBase = pdf.fileName.substring(0, pdf.fileName.lastIndexOf('.')).toLowerCase();
-				let hasMd = mdFiles.some(md => md.fileName.substring(0, md.fileName.lastIndexOf('.')).toLowerCase() === pdfBase);
+				let pdfBase = this.normalizeName(pdf.fileName.substring(0, pdf.fileName.lastIndexOf('.')));
+				let hasMd = mdFiles.some(md => this.normalizeName(md.fileName.substring(0, md.fileName.lastIndexOf('.'))) === pdfBase);
 
 				if (hasMd) { alreadyHas++; continue; }
 
@@ -547,10 +547,15 @@ MdBundle = {
 
 	hasMatchingMd(pdfFiles, mdFiles) {
 		for (let pdf of pdfFiles) {
-			let pdfBase = pdf.fileName.substring(0, pdf.fileName.lastIndexOf('.')).toLowerCase();
-			if (mdFiles.some(md => md.fileName.substring(0, md.fileName.lastIndexOf('.')).toLowerCase() === pdfBase)) return true;
+			let pdfBase = this.normalizeName(pdf.fileName.substring(0, pdf.fileName.lastIndexOf('.')));
+			if (mdFiles.some(md => this.normalizeName(md.fileName.substring(0, md.fileName.lastIndexOf('.'))) === pdfBase)) return true;
 		}
 		return false;
+	},
+
+	normalizeName(str) {
+		// Remove accents and normalize for comparison
+		return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 	},
 
 	async pickFolder(window) {
