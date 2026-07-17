@@ -188,6 +188,20 @@ MSc. Engenharia Elétrica / Ciência da Computação — UFMA · Doutorando — 
 
 [Lattes](http://lattes.cnpq.br/7726054867638395) | [LinkedIn](https://www.linkedin.com/in/williamcmendes/) | [GitHub](https://github.com/wcmendes) | [ORCID](https://orcid.org/0009-0006-8272-8549)
 
+## Support the Project
+
+If MdBundle is useful for your research, consider supporting its development:
+
+- ⭐ Star this repository
+- 🐛 [Report bugs or suggest features](https://github.com/wcmendes/MdBundle-for-Zotero/issues)
+- 🌍 [Contribute translations](CONTRIBUTING.md)
+- 🔀 [Submit a Pull Request](CONTRIBUTING.md)
+
+<!--
+- ☕ [Buy me a coffee](https://buymeacoffee.com/YOUR_USERNAME)
+- 💜 [GitHub Sponsors](https://github.com/sponsors/wcmendes)
+-->
+
 ## License
 
 MIT
