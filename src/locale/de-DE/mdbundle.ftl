@@ -27,7 +27,7 @@ mdbundle-no-pdf-no-md = Ohne PDF und ohne MD
 mdbundle-pdf-no-md = Mit PDF aber ohne MD
 mdbundle-suspicious-mds = Verdächtige MDs (<5KB, möglicherweise beschädigt)
 mdbundle-items-no-pdf = Einträge ohne PDF
-mdbundle-items-pdf-no-md = Einträge mit PDF aber ohne passendem MD
+mdbundle-items-pdf-no-md = Einträge mit PDF aber ohne passendes MD
 mdbundle-and-more = ... und { $count } weitere
 
 mdbundle-gen-done = MD-Erzeugung abgeschlossen!

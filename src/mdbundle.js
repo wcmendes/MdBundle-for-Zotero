@@ -122,15 +122,25 @@ MdBundle = {
 			this.addedElementIDs.push(menu.id);
 		}
 
-		// Tools menu
-		let toolsDocx = doc.createXULElement('menuitem');
-		toolsDocx.id = 'mdbundle-tools-docx';
-		toolsDocx.setAttribute('label', this.s('mdbundle-tools-docx'));
-		toolsDocx.addEventListener('command', () => MdBundle.selectFromDocx(window));
+		// Tools menu - submenu like the context menu
 		let toolsMenu = doc.getElementById('menu_ToolsPopup');
 		if (toolsMenu) {
-			toolsMenu.appendChild(toolsDocx);
-			this.addedElementIDs.push(toolsDocx.id);
+			let toolsSubmenu = doc.createXULElement('menu');
+			toolsSubmenu.id = 'mdbundle-tools-menu';
+			toolsSubmenu.setAttribute('label', 'MdBundle');
+
+			let toolsPopup = doc.createXULElement('menupopup');
+			toolsPopup.id = 'mdbundle-tools-menupopup';
+
+			let toolsDocx = doc.createXULElement('menuitem');
+			toolsDocx.id = 'mdbundle-tools-docx';
+			toolsDocx.setAttribute('label', this.s('mdbundle-tools-docx'));
+			toolsDocx.addEventListener('command', () => MdBundle.selectFromDocx(window));
+
+			toolsPopup.appendChild(toolsDocx);
+			toolsSubmenu.appendChild(toolsPopup);
+			toolsMenu.appendChild(toolsSubmenu);
+			this.addedElementIDs.push(toolsSubmenu.id);
 		}
 	},
 
@@ -415,10 +425,41 @@ MdBundle = {
 			}
 
 			let found = [], notFound = [];
+			let foundItemIDs = new Set();
 			for (let cit of citations) {
 				let item = Zotero.Items.getByLibraryAndKey(Zotero.Libraries.userLibraryID, cit.key);
-				if (item) found.push(item);
-				else notFound.push(cit);
+
+				// If found by key, verify it has attachments; if not, try title search
+				if (item && item.getAttachments().length > 0) {
+					if (!foundItemIDs.has(item.id)) {
+						foundItemIDs.add(item.id);
+						found.push(item);
+					}
+				} else {
+					// Fallback: search by title from citation data
+					let titleMatch = null;
+					if (cit.title) {
+						let s = new Zotero.Search();
+						s.libraryID = Zotero.Libraries.userLibraryID;
+						s.addCondition('title', 'is', cit.title);
+						let ids = await s.search();
+						if (ids.length > 0) {
+							for (let id of ids) {
+								let candidate = await Zotero.Items.getAsync(id);
+								if (candidate && !candidate.isAttachment() && !foundItemIDs.has(candidate.id)) {
+									titleMatch = candidate;
+									break;
+								}
+							}
+						}
+					}
+					if (titleMatch) {
+						foundItemIDs.add(titleMatch.id);
+						found.push(titleMatch);
+					} else {
+						notFound.push(cit);
+					}
+				}
 			}
 
 			if (found.length === 0) {
@@ -430,7 +471,7 @@ MdBundle = {
 
 			await window.ZoteroPane.selectItems(found.map(i => i.id));
 
-			// Analyze attachment status of found items
+			// Analyze attachment status only of the selected items
 			let withPdf = 0, withMd = 0, noFilesList = [];
 			for (let item of found) {
 				let { pdfFiles, mdFiles } = await this.getAttachmentInfo(item);
@@ -438,7 +479,7 @@ MdBundle = {
 				let hasMd = this.hasMatchingMd(pdfFiles, mdFiles);
 				if (hasPdf) withPdf++;
 				if (hasMd) withMd++;
-				if (!hasPdf && mdFiles.length === 0) {
+				if (!hasPdf) {
 					noFilesList.push(item.getField('title') || `(item ${item.id})`);
 				}
 			}
@@ -450,8 +491,8 @@ MdBundle = {
 			msg += `  ✅ ${this.s('mdbundle-with-pdf')}: ${withPdf}\n`;
 			msg += `  ✅ ${this.s('mdbundle-with-md')}: ${withMd}\n`;
 			if (noFilesList.length > 0) {
-				msg += `  ❌ ${this.s('mdbundle-no-pdf-no-md')}: ${noFilesList.length}\n`;
-				for (let t of noFilesList.slice(0, 5)) msg += `     • ${t.substring(0, 50)}\n`;
+				msg += `  📄 ${this.s('mdbundle-items-no-pdf')}: ${noFilesList.length}\n`;
+				for (let t of noFilesList.slice(0, 5)) msg += `     • ${t.substring(0, 55)}\n`;
 				if (noFilesList.length > 5) msg += `     ${this.s('mdbundle-and-more', {count: noFilesList.length - 5})}\n`;
 			}
 			if (notFound.length > 0) {
@@ -473,56 +514,159 @@ MdBundle = {
 		let file = Zotero.File.pathToFile(docxPath);
 		zipReader.open(file);
 
-		let xmlContent = '';
-		if (zipReader.hasEntry('word/document.xml')) {
-			let stream = zipReader.getInputStream('word/document.xml');
+		// Read document.xml and footnotes.xml (note-style citations)
+		let filesToRead = ['word/document.xml', 'word/footnotes.xml', 'word/endnotes.xml'];
+		let allFields = [];
+
+		for (let entryName of filesToRead) {
+			if (!zipReader.hasEntry(entryName)) continue;
+			let stream = zipReader.getInputStream(entryName);
 			let conv = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(Ci.nsIConverterInputStream);
 			conv.init(stream, "UTF-8", 0, 0);
-			let str = {}, chunk;
+			let xmlContent = '', str = {}, chunk;
 			do { chunk = conv.readString(65536, str); xmlContent += str.value; } while (chunk > 0);
 			conv.close(); stream.close();
+
+			// Parse DOM and extract fields properly (like ref-extractor)
+			let fields = this.extractFieldsFromXml(xmlContent);
+			allFields = allFields.concat(fields);
 		}
 		zipReader.close();
 
-		let regex = /ADDIN\s+ZOTERO_ITEM\s+CSL_CITATION\s+(\{[\s\S]*?\})\s*(?=<|$)/g;
-		let matches = xmlContent.match(regex);
-		if (matches) {
-			for (let match of matches) {
-				let jsonStr = match.replace(/ADDIN\s+ZOTERO_ITEM\s+CSL_CITATION\s+/, '').trim();
-				try {
-					let citation = JSON.parse(jsonStr);
-					if (citation.citationItems) {
-						for (let ci of citation.citationItems) {
-							let key = null;
-							for (let uri of (ci.uris || ci.uri || [])) {
-								let m = uri.match(/\/items\/([A-Z0-9]{8})/);
-								if (m) { key = m[1]; break; }
-							}
-							if (!key) continue;
-							let label = key;
-							if (ci.itemData) {
-								let d = ci.itemData;
-								let auth = d.author?.length ? (d.author[0].family || d.author[0].literal || '') : '';
-								if (d.author?.length > 1) auth += ' et al.';
-								let yr = d.issued?.['date-parts']?.[0]?.[0] || '';
-								let tit = d.title || '';
-								if (auth && yr) label = `${auth} (${yr})${tit ? ' - ' + tit.substring(0,45) : ''}`;
-								else if (tit) label = tit.substring(0, 65);
-							}
-							citationsMap.set(key, label);
+		// Process fields: only CSL_CITATION fields
+		for (let field of allFields) {
+			field = field.trim();
+			let cslFieldPrefix = /^(ADDIN\s+)?(ZOTERO_ITEM\s+)?CSL_CITATION/;
+			if (!cslFieldPrefix.test(field)) continue;
+
+			let jsonStr = field.replace(cslFieldPrefix, '').trim();
+			// Remove trailing hash if present (e.g. "} abc123")
+			jsonStr = jsonStr.replace(/(\{.+\})\s+[0-9A-Za-z]+$/, '$1');
+
+			try {
+				let citation = JSON.parse(jsonStr);
+				if (citation.citationItems) {
+					for (let ci of citation.citationItems) {
+						// Skip citations without itemData (like ref-extractor does)
+						if (!ci.itemData) continue;
+
+						let key = null;
+						let uris = ci.uris || ci.uri || [];
+						for (let uri of uris) {
+							let m = uri.match(/\/items\/([A-Z0-9]{8})/);
+							if (m) { key = m[1]; break; }
 						}
+						if (!key) continue;
+						// Deduplicate by key
+						if (citationsMap.has(key)) continue;
+
+						let label = key;
+						let title = ci.itemData?.title || '';
+						if (ci.itemData) {
+							let d = ci.itemData;
+							let auth = d.author?.length ? (d.author[0].family || d.author[0].literal || '') : '';
+							if (d.author?.length > 1) auth += ' et al.';
+							let yr = d.issued?.['date-parts']?.[0]?.[0] || '';
+							let tit = d.title || '';
+							if (auth && yr) label = `${auth} (${yr})${tit ? ' - ' + tit.substring(0, 45) : ''}`;
+							else if (tit) label = tit.substring(0, 65);
+						}
+						citationsMap.set(key, { label, title });
 					}
-				} catch(e) {
-					let uriRe = /zotero\.org\/(?:users|groups)\/\d+\/items\/([A-Z0-9]{8})/g;
-					let m; while ((m = uriRe.exec(match)) !== null) { if (!citationsMap.has(m[1])) citationsMap.set(m[1], m[1]); }
 				}
+			} catch (e) {
+				// JSON parse failed — skip this field
+				this.log(`Failed to parse citation field: ${e.message}`);
 			}
 		}
-		// Fallback: scan all URIs
-		let uriRe = /zotero\.org\/(?:users|groups)\/\d+\/items\/([A-Z0-9]{8})/g;
-		let m; while ((m = uriRe.exec(xmlContent)) !== null) { if (!citationsMap.has(m[1])) citationsMap.set(m[1], m[1]); }
 
-		return [...citationsMap.entries()].map(([key, label]) => ({ key, label }));
+		return [...citationsMap.entries()].map(([key, data]) => ({ key, label: data.label, title: data.title }));
+	},
+
+	extractFieldsFromXml(xmlContent) {
+		// Properly extract complex field content from Office Open XML
+		// Complex fields are delimited by <w:fldChar w:fldCharType="begin"/> and "end"/>
+		// The actual content is in <w:instrText> elements between begin and end
+		let fields = [];
+
+		// Parse as DOM
+		let parser = new DOMParser();
+		let doc = parser.parseFromString(xmlContent, 'text/xml');
+
+		// Find all fldChar elements with fldCharType="begin"
+		let allElements = doc.getElementsByTagName('*');
+		let fldChars = [];
+		for (let i = 0; i < allElements.length; i++) {
+			let el = allElements[i];
+			if (el.localName === 'fldChar') {
+				fldChars.push(el);
+			}
+		}
+
+		// Walk through fldChars to find begin/end pairs
+		let i = 0;
+		while (i < fldChars.length) {
+			let el = fldChars[i];
+			let charType = el.getAttribute('w:fldCharType') || el.getAttributeNS(null, 'fldCharType') || '';
+
+			if (charType === 'begin') {
+				// Collect instrText content until we hit 'end'
+				let instrText = '';
+				let depth = 1;
+				let run = el.parentElement; // <w:r> containing begin
+
+				if (run) {
+					let sibling = run.nextSibling;
+					while (sibling && depth > 0) {
+						// Check if this sibling contains fldChar
+						let fldCharInSibling = sibling.getElementsByTagName('w:fldChar');
+						if (fldCharInSibling.length === 0) {
+							// Also check without namespace prefix
+							fldCharInSibling = [];
+							let children = sibling.getElementsByTagName('*');
+							for (let c = 0; c < children.length; c++) {
+								if (children[c].localName === 'fldChar') {
+									fldCharInSibling.push(children[c]);
+								}
+							}
+						}
+
+						for (let fc = 0; fc < fldCharInSibling.length; fc++) {
+							let type = fldCharInSibling[fc].getAttribute('w:fldCharType')
+								|| fldCharInSibling[fc].getAttributeNS(null, 'fldCharType') || '';
+							if (type === 'begin') depth++;
+							else if (type === 'end') depth--;
+						}
+
+						if (depth > 0) {
+							// Collect instrText content
+							let instrElements = sibling.getElementsByTagName('w:instrText');
+							if (instrElements.length === 0) {
+								let children = sibling.getElementsByTagName('*');
+								for (let c = 0; c < children.length; c++) {
+									if (children[c].localName === 'instrText') {
+										instrText += children[c].textContent;
+									}
+								}
+							} else {
+								for (let j = 0; j < instrElements.length; j++) {
+									instrText += instrElements[j].textContent;
+								}
+							}
+						}
+
+						sibling = sibling.nextSibling;
+					}
+				}
+
+				if (instrText.length > 0) {
+					fields.push(instrText);
+				}
+			}
+			i++;
+		}
+
+		return fields;
 	},
 
 	// ─── HELPERS ──────────────────────────────────────────────────────

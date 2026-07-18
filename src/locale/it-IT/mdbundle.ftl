@@ -42,5 +42,5 @@ mdbundle-docx-check = Assicurati che il file sia stato scritto usando il plugin 
 mdbundle-docx-success = Elementi selezionati con successo!
 mdbundle-docx-citations = Citazioni nel documento
 mdbundle-docx-found = Elementi trovati e selezionati
-mdbundle-docx-not-found = Non trovati nella libreria
+mdbundle-docx-not-found = Non trovati nella biblioteca
 mdbundle-docx-next = Ora puoi usare MdBundle per esportare gli allegati degli elementi selezionati.
